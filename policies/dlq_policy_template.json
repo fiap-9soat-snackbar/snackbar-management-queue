@@ -1,0 +1,33 @@
+{
+  "Version": "2012-10-17",
+  "Id": "${queue_name}-policy",
+  "Statement": [
+    {
+      "Sid": "AllowSendMessageFromMainQueue",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "*"
+      },
+      "Action": "sqs:SendMessage",
+      "Resource": "${queue_arn}",
+      "Condition": {
+        "ArnEquals": {
+          "aws:SourceArn": "${source_queue_arn}"
+        }
+      }
+    },
+    {
+      "Sid": "AllowReceiveDeleteMessage",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "*"
+      },
+      "Action": [
+        "sqs:ReceiveMessage",
+        "sqs:DeleteMessage",
+        "sqs:GetQueueAttributes"
+      ],
+      "Resource": "${queue_arn}"
+    }
+  ]
+}
