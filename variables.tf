@@ -34,6 +34,12 @@ variable "max_message_size" {
   default     = 262144  # 256 KiB
 }
 
+variable "use_localstack" {
+  description = "Whether to use LocalStack for local development"
+  type        = bool
+  default     = false
+}
+
 # Remote state configuration
 variable "remote_state_bucket" {
   description = "S3 bucket containing remote state"
