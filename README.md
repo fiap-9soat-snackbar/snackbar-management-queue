@@ -2,7 +2,7 @@
 
 This repository contains the infrastructure as code (Terraform) for the SQS queues and Lambda functions used by the Snackbar Management system.
 
-## Architecture
+## Architecture Overview
 
 The architecture consists of:
 
@@ -16,53 +16,38 @@ The architecture consists of:
 3. **API Gateway**:
    - HTTP API that exposes the Lambda function
 
+4. **Snackbar Management Application**: 
+   - Consumes messages from the SQS queue
+
 ## Deployment
 
 ### Prerequisites
 
 - Terraform >= 1.0.0
 - AWS CLI configured with appropriate credentials
-- For local development: Docker and LocalStack
 
 ### AWS Deployment
 
 1. Initialize Terraform:
-   ```
+   ```bash
    terraform init
    ```
 
 2. Plan the deployment:
-   ```
+   ```bash
    terraform plan
    ```
 
 3. Apply the changes:
-   ```
+   ```bash
    terraform apply
-   ```
-
-### LocalStack Deployment
-
-1. Start LocalStack:
-   ```
-   docker run -d -p 4566:4566 -p 4571:4571 --name localstack localstack/localstack
-   ```
-
-2. Initialize Terraform with LocalStack provider:
-   ```
-   terraform init
-   ```
-
-3. Apply the changes with LocalStack variable:
-   ```
-   terraform apply -var="use_localstack=true"
    ```
 
 ## Usage
 
-### Sending Messages to SQS
+### Lambda Function API
 
-The Lambda function accepts the following operations:
+The Lambda function is exposed via API Gateway and accepts the following operations:
 
 #### Create Product
 
@@ -122,14 +107,96 @@ Messages sent to SQS have the following format:
 }
 ```
 
-## Environment Support
+## Testing
 
-This infrastructure is designed to work in both AWS and LocalStack environments:
+Use the `test_lambda_sequence.sh` script to test the Lambda function and SQS integration:
 
-- **AWS**: Uses real AWS services with proper IAM roles and permissions
-- **LocalStack**: Uses LocalStack for local development and testing
+```bash
+./test_lambda_sequence.sh [SLEEP_TIME]
+```
 
-The `use_localstack` variable controls which environment to target.
+Where `SLEEP_TIME` is an optional parameter specifying how long to wait between operations (default: 30 seconds).
+
+The sequential script:
+- Creates a product
+- Retrieves the MongoDB ObjectId from the application
+- Uses that ObjectId for subsequent UPDATE and DELETE operations
+- Verifies each operation was successful
+
+### Understanding the Testing Process
+
+The test script performs the following steps:
+
+1. **CREATE Operation**:
+   - Sends a request to create a new product
+   - Waits for the specified sleep time to allow the application to process the message
+
+2. **UPDATE Operation**:
+   - Sends a request to update the previously created product
+   - Waits for the specified sleep time to allow the application to process the message
+
+3. **DELETE Operation**:
+   - Sends a request to delete the product
+   - Waits for the specified sleep time to allow the application to process the message
+
+4. **Check SQS Messages**:
+   - Retrieves any remaining messages from the SQS queue
+
+The sleep time between operations is important because it allows the snackbar-management application enough time to process each message before proceeding to the next operation.
+
+## Integration with Snackbar Management Application
+
+To make the Snackbar Management application consume messages from this Lambda-produced SQS queue:
+
+1. Ensure the `SQSProductMessageConsumer` class is annotated with the appropriate profile:
+
+```java
+@Component
+@Profile({"prod", "dev"}) // Use in both production and development profiles
+public class SQSProductMessageConsumer {
+    // ...
+}
+```
+
+2. Configure the application with the correct SQS queue URL:
+
+```properties
+aws.sqs.product-events-queue-url=https://sqs.us-east-1.amazonaws.com/953430082388/snackbar-management-product-events-queue
+```
+
+## Monitoring and Troubleshooting
+
+### Monitoring Message Processing
+
+To monitor the message processing in the snackbar-management application, you can check the logs:
+
+```bash
+docker-compose logs app | grep -i "Processing"
+```
+
+Or to see received messages:
+
+```bash
+docker-compose logs app | grep -i "Received"
+```
+
+### SQS Consumer Not Processing Messages
+
+If the SQS consumer is not processing messages, check:
+
+1. The application is running with the correct profile
+2. The SQS queue URL is correctly configured in the application
+3. The `SQSProductMessageConsumer` is active
+4. AWS credentials are properly mounted in the container
+
+### Lambda Function Not Sending Messages
+
+If the Lambda function is not sending messages to SQS, check:
+
+1. The Lambda function is correctly deployed
+2. The SQS queue exists
+3. The Lambda function has the correct environment variables set
+4. The IAM role has the necessary permissions to send messages to SQS
 
 ## IAM Roles
 
@@ -145,4 +212,3 @@ After deployment, the following outputs are available:
 
 - `product_events_queue_url`: URL of the SQS queue
 - `product_operations_api_url`: URL to invoke the API Gateway endpoint
-- `localstack_sqs_queue_url`: LocalStack URL of the SQS queue (when using LocalStack)

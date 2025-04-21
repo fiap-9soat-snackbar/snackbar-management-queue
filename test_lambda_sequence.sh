@@ -4,8 +4,7 @@
 # then uses that ID for update and delete operations
 
 # Set environment variables
-ENV=${1:-"localstack"}  # Default to localstack if no argument provided
-SLEEP_TIME=${2:-30}     # Default sleep time between operations (in seconds)
+SLEEP_TIME=${1:-30}     # Default sleep time between operations (in seconds)
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -13,19 +12,12 @@ RED='\033[0;31m'
 YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
 
-echo -e "${YELLOW}Testing Product Operations Lambda in $ENV environment${NC}"
+echo -e "${YELLOW}Testing Product Operations Lambda${NC}"
 echo -e "${YELLOW}Using sleep time of $SLEEP_TIME seconds between operations${NC}"
 
-# Set the API endpoint based on environment
-if [ "$ENV" == "localstack" ]; then
-  # Get the LocalStack API Gateway URL
-  API_URL=$(terraform output -raw localstack_api_gateway_url)
-  echo -e "${YELLOW}Using LocalStack API URL: $API_URL${NC}"
-else
-  # Get the real AWS API Gateway URL
-  API_URL=$(terraform output -raw product_operations_api_url)
-  echo -e "${YELLOW}Using AWS API URL: $API_URL${NC}"
-fi
+# Get the API Gateway URL
+API_URL=$(terraform output -raw product_operations_api_url)
+echo -e "${YELLOW}Using API URL: $API_URL${NC}"
 
 # Test CREATE operation
 echo -e "\n${GREEN}Testing CREATE operation${NC}"
@@ -138,28 +130,15 @@ fi
 # Check SQS messages
 echo -e "\n${GREEN}Checking SQS messages${NC}"
 
-if [ "$ENV" == "localstack" ]; then
-  # For LocalStack
-  QUEUE_URL=$(terraform output -raw localstack_sqs_queue_url)
-  echo -e "${YELLOW}Using LocalStack queue URL: $QUEUE_URL${NC}"
-  
-  # Use awslocal for LocalStack
-  echo -e "\n${GREEN}Messages in queue:${NC}"
-  aws --endpoint-url=http://localhost:4566 sqs receive-message \
-    --queue-url $QUEUE_URL \
-    --max-number-of-messages 10 \
-    --wait-time-seconds 1 | jq
-else
-  # For real AWS
-  QUEUE_URL=$(terraform output -raw product_events_queue_url)
-  echo -e "${YELLOW}Using AWS queue URL: $QUEUE_URL${NC}"
-  
-  # Use regular AWS CLI for AWS
-  echo -e "\n${GREEN}Messages in queue:${NC}"
-  aws sqs receive-message \
-    --queue-url $QUEUE_URL \
-    --max-number-of-messages 10 \
-    --wait-time-seconds 1 | jq
-fi
+# Get the queue URL
+QUEUE_URL=$(terraform output -raw product_events_queue_url)
+echo -e "${YELLOW}Using queue URL: $QUEUE_URL${NC}"
+
+# Use AWS CLI to check messages
+echo -e "\n${GREEN}Messages in queue:${NC}"
+aws sqs receive-message \
+  --queue-url $QUEUE_URL \
+  --max-number-of-messages 10 \
+  --wait-time-seconds 1 | jq
 
 echo -e "\n${GREEN}Test completed successfully!${NC}"
