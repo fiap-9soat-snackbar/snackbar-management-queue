@@ -4,3 +4,4 @@ visibility_timeout_seconds = 30
 delay_seconds = 0
 receive_wait_time_seconds = 0
 max_message_size = 262144  # 256 KiB
+use_localstack = false
