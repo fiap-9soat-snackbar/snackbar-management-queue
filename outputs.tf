@@ -17,7 +17,7 @@ output "product_events_dlq_arn" {
   description = "ARN of the product events dead letter queue"
   value       = aws_sqs_queue.product_events_dlq.arn
 }
-
+/*
 # Lambda Function ARN
 output "product_operations_lambda_arn" {
   description = "The ARN of the Lambda function for product operations"
@@ -35,3 +35,4 @@ output "product_operations_api_id" {
   description = "The ID of the API Gateway"
   value       = aws_apigatewayv2_api.product_operations_api.id
 }
+*/

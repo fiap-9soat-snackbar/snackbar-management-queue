@@ -79,7 +79,7 @@ resource "aws_sqs_queue_redrive_allow_policy" "product_events_dlq_redrive_allow_
 #--------------------------------------------------------------
 # Lambda Function for Product Operations
 #--------------------------------------------------------------
-
+/*
 # Create a zip file of the Lambda function code
 data "archive_file" "product_operations_lambda_zip" {
   type        = "zip"
@@ -205,5 +205,6 @@ resource "aws_lambda_permission" "product_operations_api_permission" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.product_operations_lambda.function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_apigatewayv2_api.product_operations_api.execution_arn}/*/*/product-operations"
+  source_arn    = "${aws_apigatewayv2_api.product_operations_api.execution_arn}\/*\/*\/product-operations"
 }
+*/
