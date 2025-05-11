@@ -1,3 +1,9 @@
+variable "aws_account_id" {
+  description = "AWS Account ID"
+  type        = string
+  default     = ""  # Should be provided via environment or command line
+}
+
 variable "max_receive_count" {
   description = "Maximum number of times a message can be received before being sent to the DLQ"
   type        = number

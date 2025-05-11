@@ -91,7 +91,7 @@ data "archive_file" "product_operations_lambda_zip" {
 resource "aws_lambda_function" "product_operations_lambda" {
   function_name    = "${local.project_name}-product-operations"
   description      = "Lambda function to produce SQS messages for product CRUD operations"
-  role             = "arn:aws:iam::953430082388:role/LabRole"  # Using existing LabRole
+  role             = "arn:aws:iam::${var.aws_account_id}:role/LabRole"  # Using existing LabRole
   handler          = "lambda_function.lambda_handler"
   runtime          = "python3.11"
   filename         = data.archive_file.product_operations_lambda_zip.output_path
